@@ -1,0 +1,15 @@
+[Unit]
+Description=WordPress Video to S3 Watcher (inotify)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+ExecStart=/usr/local/bin/wp-video-watcher.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
