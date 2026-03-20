@@ -1,0 +1,126 @@
+---
+- name: Update system packages
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+
+- name: Install required dependencies
+  apt:
+    name:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-mysql
+      - php-curl
+      - php-gd
+      - php-xml
+      - php-mbstring
+      - php-zip
+      - unzip
+      - mysql-client
+      - curl
+      - awscli
+      - inotify-tools
+    state: present
+  become: yes
+
+- name: Download WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Copy WordPress to web root
+  shell: |
+    sudo cp -r /tmp/wordpress/* /var/www/html/
+    sudo rm -f /var/www/html/index.html
+    sudo chown -R www-data:www-data /var/www/html/
+    sudo chmod -R 755 /var/www/html/
+  become: yes
+
+- name: Configure WordPress wp-config.php
+  template:
+    src: wp-config.php.j2
+    dest: /var/www/html/wp-config.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: yes
+
+- name: Enable Apache modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rewrite
+    - headers
+  become: yes
+
+- name: Configure Apache
+  template:
+    src: apache-config.j2
+    dest: /etc/apache2/sites-available/000-default.conf
+    backup: yes
+  become: yes
+  notify: restart apache2
+
+- name: Ensure uploads directory exists
+  file:
+    path: /var/www/html/wp-content/uploads
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  become: yes
+
+- name: Create mu-plugins directory
+  file:
+    path: /var/www/html/wp-content/mu-plugins
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  become: yes
+
+- name: Install AWS SDK via Composer
+  shell: |
+    cd /var/www/html
+    sudo chown -R ubuntu:ubuntu /var/www/html
+    curl -sS https://getcomposer.org/installer | php
+    sudo mv composer.phar /usr/local/bin/composer
+    composer require aws/aws-sdk-php
+    sudo chown -R www-data:www-data /var/www/html
+    sudo chmod -R 755 /var/www/html
+  become: yes
+  register: composer_install
+  changed_when: "'Installing dependencies' in composer_install.stdout"
+
+- name: Create mu-plugin for HTTP app passwords
+  copy:
+    content: |
+      <?php
+      /**
+       * Plugin Name: Allow HTTP Application Passwords (TESTING ONLY)
+       * Description: Remove this in production — use HTTPS instead!
+       */
+      add_filter('wp_is_application_passwords_available', '__return_true');
+    dest: /var/www/html/wp-content/mu-plugins/allow-http-app-passwords.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: yes
+
+- name: Start and enable Apache
+  systemd:
+    name: apache2
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  become: yes
+
+- name: Wait for Apache to be ready
+  wait_for:
+    port: 80
+    delay: 2
+    timeout: 30
