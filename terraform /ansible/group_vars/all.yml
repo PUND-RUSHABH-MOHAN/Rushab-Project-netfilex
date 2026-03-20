@@ -1,0 +1,31 @@
+---
+# AWS Configuration
+aws_region: ap-south-1
+aws_account_id: "123456789012"  # Replace with your AWS account ID
+
+# Database Configuration
+db_host: "REPLACE_WITH_RDS_ENDPOINT"
+db_name: wordpress
+db_user: admin
+db_password: "Zaq12wsxcde3"
+
+# WordPress Configuration
+wordpress_url: "http://REPLACE_WITH_EC2_IP"
+wordpress_admin_user: rushab
+wordpress_admin_email: "your-email@example.com"
+
+# S3 Configuration
+s3_input_bucket: "rushab-ott-input-bucket-123456789012"
+s3_output_bucket: "rushab-ott-output-bucket-123456789012"
+
+# CloudFront Configuration
+cloudfront_domain: "d15atvsjdn80bl.cloudfront.net"
+
+# inotify Configuration
+inotify_watch_dir: /var/www/html/wp-content/uploads
+inotify_log_file: /var/log/wp-video-watcher.log
+
+# Secrets Manager Configuration
+secrets_manager_region: ap-south-1
+cloudfront_private_key_path: /etc/cloudfront/private-key.pem
+wordpress_credentials_secret: wordpress/lambda-credentials
