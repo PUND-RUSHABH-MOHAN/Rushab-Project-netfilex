@@ -1,0 +1,37 @@
+---
+- name: Deploy OTT Platform Infrastructure
+  hosts: wordpress_servers
+  become: no
+  gather_facts: yes
+
+  roles:
+    - role: wordpress
+      tags:
+        - wordpress
+    
+    - role: inotify
+      tags:
+        - inotify
+    
+    - role: lambda
+      tags:
+        - lambda
+
+  post_tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          Deployment completed!
+          
+          WordPress URL: {{ wordpress_url }}
+          Database Host: {{ db_host }}
+          S3 Input Bucket: {{ s3_input_bucket }}
+          S3 Output Bucket: {{ s3_output_bucket }}
+          CloudFront Domain: {{ cloudfront_domain }}
+          
+          Next steps:
+          1. Visit {{ wordpress_url }} to complete WordPress setup
+          2. Create WordPress application password
+          3. Update Secrets Manager with WordPress credentials
+          4. Deploy Lambda functions
+          5. Configure S3 event notifications
