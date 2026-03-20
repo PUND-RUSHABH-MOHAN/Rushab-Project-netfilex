@@ -1,0 +1,39 @@
+---
+- name: Create lambda functions directory
+  file:
+    path: /tmp/lambda-functions
+    state: directory
+
+- name: Copy Lambda #1 function
+  copy:
+    src: "{{ playbook_dir }}/../lambda-functions/lambda1-mov-to-mediaconvert/lambda_function.py"
+    dest: /tmp/lambda-functions/lambda1_function.py
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy Lambda #2 function
+  copy:
+    src: "{{ playbook_dir }}/../lambda-functions/lambda2-s3-to-wordpress/lambda_function.py"
+    dest: /tmp/lambda-functions/lambda2_function.py
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Zip Lambda #1
+  shell: |
+    cd /tmp/lambda-functions
+    zip -j lambda1.zip lambda1_function.py
+  register: zip_lambda1
+  changed_when: "'adding' in zip_lambda1.stdout or 'updating' in zip_lambda1.stdout"
+
+- name: Zip Lambda #2
+  shell: |
+    cd /tmp/lambda-functions
+    zip -j lambda2.zip lambda2_function.py
+  register: zip_lambda2
+  changed_when: "'adding' in zip_lambda2.stdout or 'updating' in zip_lambda2.stdout"
+
+- name: Display Lambda function paths
+  debug:
+    msg: "Lambda functions are ready at /tmp/lambda-functions/"
